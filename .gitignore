@@ -1,0 +1,39 @@
+# Files that must never be published.
+#
+# The most important line is ".env": it holds a live Groq API key. Verify with
+# "git check-ignore -v .env" before your first commit. Every "gsk_" string in
+# tests/ and docs/ is a deliberate fake used for testing.
+
+# Secrets - never share these
+.env
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+
+# Planning scratch: ledgers, task briefs and implementer reports
+.superpowers/
+
+# Uploaded PDFs and generated indexes (may contain private documents)
+data/*
+!data/.gitkeep
+
+# Local model cache
+.cache/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

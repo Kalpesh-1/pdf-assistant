@@ -1,0 +1,85 @@
+[project]
+name = "pdf-assistant"
+version = "0.1.0"
+description = "AI-Powered PDF Question Answering System - a BCA final-year RAG project"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "streamlit>=1.40",          # web user interface
+    # PDF text extraction with page numbers.
+    # Capped below 2.0 on purpose. PyMuPDF 2.x adds document-layout extras
+    # (onnxruntime, pymupdf-layout, pymupdf4llm, psutil, tabulate) that this
+    # project never uses, and an unbounded range would install 1.x on Python
+    # 3.10 but 2.x on 3.11+, giving different students different APIs.
+    "pymupdf>=1.25,<2",
+    "sentence-transformers>=3.0", # local embedding model (no paid API)
+    # torch is required by sentence-transformers. It is declared here on purpose
+    # so the CPU-only pin in [tool.uv.sources] below applies to it - a source
+    # pin only affects dependencies the project declares directly.
+    "torch>=2.2",
+    "faiss-cpu>=1.8",           # vector similarity search
+    "groq>=0.11",               # LLM provider for answers and summaries
+    "python-dotenv>=1.0",       # loads the local .env configuration file
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+# ---------------------------------------------------------------------------
+# PyTorch CPU-only build.
+#
+# sentence-transformers depends on torch. By default, pip/uv install the CUDA
+# build of torch, which pulls in about 3 GB of NVIDIA GPU libraries. This
+# project runs a small embedding model on the CPU and uses faiss-cpu, so none
+# of those GPU libraries are ever used.
+#
+# Pointing torch at PyTorch's official CPU index cuts the download from
+# roughly 3 GB to roughly 200 MB, with no change in behaviour for this project.
+# ---------------------------------------------------------------------------
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true  # only used by packages listed above, not for everything
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_assistant"]
+
+# ---------------------------------------------------------------------------
+# pytest: tests import the package from src/, so put src/ on the import path.
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v"
+
+# ---------------------------------------------------------------------------
+# Ruff: linting and formatting.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors (PEP 8)
+    "F",   # pyflakes: unused imports, undefined names
+    "I",   # import sorting
+    "UP",  # prefer modern Python syntax
+    "B",   # common bug patterns
+]
+
+[tool.ruff.lint.isort]
+# Stated explicitly so imports stay grouped correctly regardless of how ruff
+# detects the first-party package.
+known-first-party = ["pdf_assistant"]
